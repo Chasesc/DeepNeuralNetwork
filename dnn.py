@@ -1,5 +1,7 @@
 from layers.core import Dense
 
+import losses
+
 import numpy as np
 
 _default_params = {
@@ -23,7 +25,7 @@ _option_restrictions = {
 }
 
 class DNN(object):
-	def __init__(self, X, Y, layers, options, quiet = True):
+	def __init__(self, X, Y, layers, options):
 		self.X = X
 		self.Y = Y
 
@@ -32,23 +34,63 @@ class DNN(object):
 
 		self.layers = layers
 		self.params = self._init_params()
+		self.loss = losses.get_loss_function(self.options['loss'])
 
-	def train(self):
-		pass
+	def train(self, quiet = True):
+		self._forward_pass(self.X)
+		self._backward_pass()
 
-	def predict(self):
-		self._forward_pass()
+	def predict(self, X):
+		self._forward_pass(X)
 
 		L = len(self.layers)
 
 		return self.cache["A"+str(L)]
 
-	def _forward_pass(self):
-		self.cache = {'A0' : self.X}
+	def _forward_pass(self, A0):
+		self.cache = {'A0' : A0}
 
 		for l, layer in enumerate(self.layers):
 			self.cache["Z" + str(l+1)] = np.dot(self.params["W"+str(l+1)], self.cache["A"+str(l)]) + self.params["b"+str(l+1)]
-			self.cache["A" + str(l+1)] = layer.activation_function(self.cache["Z" + str(l+1)])
+			self.cache["A" + str(l+1)] = layer.activation_forwards(self.cache["Z" + str(l+1)])
+
+	def _backward_pass(self):
+		self.gradients = {}
+
+		L = len(self.layers)
+		AL = self.cache["A" + str(L)]
+
+		self.Y = self.Y.reshape(AL.shape)
+
+		dAL = - (np.divide(self.Y, AL) - np.divide(1 - self.Y, 1 - AL))
+		#grads["dA" + str(L)], grads["dW" + str(L)], grads["db" + str(L)] = linear_activation_backward(dAL, current_cache, "sigmoid")
+		dZ = self.layers[-1].activation_backwards(dAL, self.cache["Z" + str(L)])
+		#dA_prev, dW, db = linear_backward(dZ, linear_cache)
+		A_prev = self.cache["A" + str(L - 1)]
+		W = self.params["W" + str(L)]
+		b = self.params["b" + str(L)]
+		m = A_prev.shape[1]
+		
+		dW = np.dot(dZ, A_prev.T) / m
+		db = np.sum(dZ, axis = 1, keepdims = True) / m
+		dA_prev = np.dot(W.T, dZ)
+
+		self.gradients["dA" + str(L)], self.gradients["dW" + str(L)], self.gradients["db" + str(L)] = dA_prev, dW, db
+
+		for l in reversed(range(L-1)):
+			#linear_activation_backward(grads["dA" + str(l + 2)], (lin-(A, W, b)), actZ), "relu")
+			dZ = self.layers[l].activation_backwards(self.gradients["dA" + str(l + 2)], self.cache["Z" + str(l)])
+
+			A_prev = self.cache["A" + str(l - 1)]
+			W = self.params["W" + str(l)]
+			b = self.params["b" + str(l)]
+			m = A_prev.shape[1]
+
+			dW = np.dot(dZ, A_prev.T) / m
+			db = np.sum(dZ, axis = 1, keepdims = True) / m
+			dA_prev = np.dot(W.T, dZ)
+
+			self.gradients["dA" + str(l + 1)], self.gradients["dW" + str(l + 1)], self.gradients["db" + str(l + 1)] = dA_prev, dW, db
 
 	def _init_params(self):
 		params = {}

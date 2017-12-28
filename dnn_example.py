@@ -19,14 +19,14 @@ def load_data():
     test_set_y_orig = test_set_y_orig.reshape((1, test_set_y_orig.shape[0]))
 
     # Reshape the training and test examples
-    train_x_flatten = train_x_orig.reshape(train_x_orig.shape[0], -1).T   # The "-1" makes reshape flatten the remaining dimensions
-    test_x_flatten = test_x_orig.reshape(test_x_orig.shape[0], -1).T
+    train_x_flatten = train_set_x_orig.reshape(train_set_x_orig.shape[0], -1).T   # The "-1" makes reshape flatten the remaining dimensions
+    test_x_flatten = test_set_x_orig.reshape(test_set_x_orig.shape[0], -1).T
 
-	# Standardize data to have feature values between 0 and 1.
-	train_x = train_x_flatten/255.
-	test_x = test_x_flatten/255.
+    # Standardize data to have feature values between 0 and 1.
+    train_x = train_x_flatten/255.
+    test_x = test_x_flatten/255.
 
-	return train_x, test_x, train_set_x_orig, train_set_y_orig, test_set_x_orig, test_set_y_orig, classes
+    return train_x, test_x, train_set_x_orig, train_set_y_orig, test_set_x_orig, test_set_y_orig, classes
 
 def main():
 	options = {
@@ -41,26 +41,31 @@ def main():
 	X = np.array([[1, 2], [1, 2], [4, 2]])
 	Y = np.array([[0], [0], [0]])
 
-	print(X.shape)
-	print(Y.shape)
+	print(train_x.shape)
+	print(test_x.shape)
+	print(train_set_y_orig.shape)
+
+	print(train_set_y_orig[0, 0:10])
 
 	layers = [
 		Dense(32, activation = 'relu'),
 		Dense(5,  activation = 'relu'),
-		Dense(1, activation = 'softmax')
+		Dense(1, activation = 'sigmoid')
 	]
 
 	print(len(layers))
 
-	dnn = DNN(X, Y, layers, options)
+	dnn = DNN(train_x, train_set_y_orig, layers, options)
 
-	for param in sorted(dnn.params):
-		print(param, dnn.params[param].shape)
+	print(dnn.params.keys())
+
+	#for param in sorted(dnn.params):
+	#	print(param, dnn.params[param].shape)
 
 	print(dnn)
-	dnn.train()
-
-	print(dnn.predict())
+	print(dnn.loss(dnn.predict(test_x), test_set_y_orig))
+	
+	dnn.train()	
 
 if __name__ == '__main__':
 	main()
