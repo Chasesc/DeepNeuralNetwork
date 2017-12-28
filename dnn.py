@@ -5,21 +5,21 @@ import losses
 import numpy as np
 
 _default_params = {
-	'learning_rate'	: 0.001,
+	'learning_rate'		: 0.001,
 	'beta1'			: 0.9,
 	'beta2'			: 0.999,
 	'mb_size'		: 128,
-	'num_epochs'	: 50,
+	'num_epochs'		: 50,
 	'optimizer'		: 'adam'
 }
 
 # maps from option to a function to check if that option is valid.
 _option_restrictions = {
-	'learning_rate'	: lambda x : x > 0,
+	'learning_rate'		: lambda x : x > 0,
 	'beta1'			: lambda x : 0 < x < 1,
 	'beta2'			: lambda x : 0 < x < 1,
 	'mb_size'		: lambda x : x >= 1 and isinstance(x, int),
-	'num_epochs'	: lambda x : x >= 1 and isinstance(x, int),
+	'num_epochs'		: lambda x : x >= 1 and isinstance(x, int),
 	'optimizer'		: lambda x : x in set(['gd', 'gdm', 'adam']),
 	'loss'			: lambda x : x in set(['crossentropy'])
 }
